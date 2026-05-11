@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#E8A44A">
+<title>Casita 🏠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#FFF8ED;--surface:#F5E6C8;--amber:#E8A44A;--amberd:#C17D2A;
+  --peach:#F2C4A0;--rust:#C4623A;--green:#7AAF6E;--greend:#4E7A43;
+  --wood:#C8956C;--wall:#F7EDD8;--sh:rgba(80,40,10,0.10);
+  --tx:#3D2B1A;--txs:#7A5A3A;--old:#E8A44A;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:'Nunito',sans-serif;color:var(--tx);max-width:480px;margin:0 auto;position:relative;}
+
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
+
+/* TOPBAR */
+.topbar{background:var(--amber);padding:10px 14px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amberd);flex-shrink:0;}
+.logo{font-family:'Press Start 2P',monospace;font-size:13px;color:#FFF8ED;text-shadow:2px 2px 0 var(--amberd);}
+.hbar-wrap{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.22);border-radius:20px;padding:5px 11px;}
+.hbar-lbl{font-family:'Press Start 2P',monospace;font-size:8px;color:#FFF8ED;}
+.hbar{width:64px;height:9px;background:rgba(255,255,255,0.28);border-radius:5px;overflow:hidden;border:1.5px solid rgba(255,255,255,0.4);}
+.hfill{height:100%;border-radius:4px;transition:width .6s,background .6s;}
+
+/* FAMILY BAR */
+.family-bar{background:var(--surface);border-bottom:2px solid var(--peach);padding:8px 12px;display:flex;gap:10px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;}
+.family-bar::-webkit-scrollbar{display:none;}
+.mbr{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:56px;user-select:none;}
+.mbr-ava{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--bg);border:2.5px solid transparent;box-shadow:2px 2px 0 var(--sh);transition:border-color .15s,transform .1s;}
+.mbr.active .mbr-ava{border-color:var(--amber);box-shadow:2px 2px 0 var(--amberd);}
+.mbr:active .mbr-ava{transform:scale(0.93);}
+.mbr-name{font-size:10px;font-weight:800;color:var(--txs);}
+.mbr-xp{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--amberd);}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.content::-webkit-scrollbar{display:none;}
+
+.screen{display:none;padding:12px 12px 90px;}
+.screen.active{display:block;}
+
+/* TOAST */
+.toast{background:var(--amber);border:2px solid var(--amberd);border-radius:10px;padding:9px 14px;font-family:'Press Start 2P',monospace;font-size:8px;color:#FFF8ED;text-align:center;margin:0 0 10px;display:none;}
+.toast.show{display:block;}
+.toast.g{background:var(--green);border-color:var(--greend);}
+
+/* REFRESH BTN */
+.refresh-btn{width:100%;padding:11px;background:var(--amber);border:2.5px solid var(--amberd);border-radius:12px;font-family:'Press Start 2P',monospace;font-size:8px;color:#FFF8ED;cursor:pointer;box-shadow:3px 3px 0 var(--amberd);margin-bottom:14px;transition:transform .1s,box-shadow .1s;letter-spacing:.5px;}
+.refresh-btn:active{transform:translateY(2px);box-shadow:1px 1px 0 var(--amberd);}
+
+/* ROOM LIST */
+.room-list{display:flex;flex-direction:column;gap:10px;}
+.room-row{background:var(--wall);border:2.5px solid var(--wood);border-radius:14px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:3px 3px 0 var(--sh);transition:border-color .15s;user-select:none;}
+.room-row:active{transform:scale(0.98);}
+.room-row.selected{border-color:var(--amber);background:#FFF5E0;box-shadow:3px 3px 0 var(--amberd);}
+.room-row.has-old{border-color:var(--old);}
+.room-emoji{font-size:32px;flex-shrink:0;}
+.room-info{flex:1;min-width:0;}
+.room-name{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--tx);margin-bottom:4px;line-height:1.5;}
+.room-sub{font-size:12px;color:var(--txs);font-weight:700;}
+.room-items-preview{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
+.room-badge{font-size:13px;font-weight:900;border-radius:20px;padding:4px 11px;flex-shrink:0;color:#FFF8ED;background:var(--rust);}
+.room-badge.ok{background:var(--green);}
+
+/* SHEET (panel deslizable) */
+.sheet-overlay{background:rgba(61,43,26,0.45);border-radius:14px;padding:8px 0 0;margin-top:12px;}
+.sheet{background:var(--bg);border-radius:14px 14px 0 0;padding:16px 14px;}
+.sheet-handle{width:38px;height:5px;background:var(--wood);border-radius:3px;margin:0 auto 14px;}
+.sheet-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--amberd);margin-bottom:4px;}
+.sheet-state{font-size:12px;font-weight:800;margin-bottom:14px;}
+.sheet-section{font-size:10px;font-weight:900;color:var(--txs);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;}
+.icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:14px;}
+.ic-btn{background:var(--wall);border:2px solid var(--peach);border-radius:10px;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:border-color .12s;user-select:none;}
+.ic-btn:active{transform:scale(0.92);border-color:var(--amber);}
+.ic-btn .emo{font-size:22px;}
+.ic-btn .lbl{font-size:9px;font-weight:800;color:var(--txs);text-align:center;line-height:1.2;word-break:break-word;}
+.close-sheet-btn{width:100%;padding:10px;background:var(--surface);border:2px solid var(--peach);border-radius:10px;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--txs);cursor:pointer;margin-top:4px;}
+
+/* TASK LIST */
+.filter-scroll{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none;}
+.filter-scroll::-webkit-scrollbar{display:none;}
+.f-btn{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:800;border:2px solid var(--peach);background:var(--bg);color:var(--txs);cursor:pointer;white-space:nowrap;flex-shrink:0;user-select:none;}
+.f-btn.active{background:var(--amber);border-color:var(--amberd);color:#FFF8ED;}
+
+.task-list-wrap{display:flex;flex-direction:column;gap:10px;}
+.task-card{background:var(--wall);border:2.5px solid var(--peach);border-radius:14px;padding:13px 14px;}
+.task-card.taken{border-color:var(--amber);background:#FFF5E0;}
+.task-card.done{opacity:.55;}
+.task-top{display:flex;align-items:flex-start;gap:12px;}
+.task-emo{font-size:28px;flex-shrink:0;margin-top:2px;}
+.task-info{flex:1;}
+.task-name{font-size:15px;font-weight:900;color:var(--tx);line-height:1.3;}
+.task-name.sthrough{text-decoration:line-through;color:var(--txs);}
+.task-meta{font-size:11px;color:var(--txs);margin-top:3px;line-height:1.5;}
+.task-taken-lbl{font-size:11px;font-weight:800;color:var(--amberd);margin-top:2px;}
+.task-done-lbl{font-size:11px;font-weight:800;color:var(--greend);margin-top:2px;}
+.task-old{font-size:10px;font-weight:800;color:var(--rust);margin-top:3px;}
+.task-btns{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;}
+.t-btn{padding:7px 12px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;border:2px solid;font-family:'Nunito',sans-serif;user-select:none;}
+.t-btn:active{transform:scale(0.95);}
+.t-btn.take{background:#FFF5E0;border-color:var(--amberd);color:var(--amberd);}
+.t-btn.done-b{background:#EAF3DE;border-color:var(--greend);color:var(--greend);}
+.t-btn.del{background:#FEF0ED;border-color:var(--rust);color:var(--rust);}
+
+/* HISTORY */
+.hist-list-wrap{display:flex;flex-direction:column;gap:7px;}
+.hist-item{background:var(--wall);border-left:4px solid var(--amber);border-radius:0 12px 12px 0;padding:10px 12px;font-size:12px;color:var(--txs);line-height:1.5;}
+.hist-item.res{border-left-color:var(--green);}
+.hist-who{font-weight:900;color:var(--amberd);}
+.hist-item.res .hist-who{color:var(--greend);}
+
+/* SETTINGS */
+.settings-section{margin-bottom:20px;}
+.settings-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--amberd);margin-bottom:10px;letter-spacing:.5px;}
+.settings-row{display:flex;align-items:center;gap:10px;background:var(--wall);border:1.5px solid var(--peach);border-radius:12px;padding:11px 13px;margin-bottom:7px;}
+.settings-row span{flex:1;font-size:13px;font-weight:700;color:var(--tx);}
+.sm-btn{padding:10px 14px;background:var(--amber);border:2.5px solid var(--amberd);border-radius:10px;font-family:'Press Start 2P',monospace;font-size:7px;color:#FFF8ED;cursor:pointer;white-space:nowrap;letter-spacing:.3px;}
+.sm-btn:active{transform:scale(0.96);}
+.sm-btn.g{background:var(--green);border-color:var(--greend);}
+.sm-btn.muted{background:var(--surface);border-color:var(--peach);color:var(--txs);}
+.icons-grid-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px;}
+.icon-setting-row{background:var(--wall);border:1.5px solid var(--peach);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;}
+.icon-setting-row .emo{font-size:20px;}
+.icon-setting-row .n{font-size:11px;font-weight:700;color:var(--txs);flex:1;line-height:1.3;}
+.add-form{background:var(--wall);border:2px solid var(--amber);border-radius:12px;padding:13px;margin-top:8px;}
+.add-form input{width:100%;padding:9px 11px;border:1.5px solid var(--peach);border-radius:9px;font-size:14px;margin-bottom:9px;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);}
+.add-form input:focus{outline:none;border-color:var(--amber);}
+.form-row{display:flex;gap:7px;}
+.form-row input{flex:1;margin-bottom:0;}
+
+/* BOTTOM NAV */
+.bottom-nav{background:var(--surface);border-top:2.5px solid var(--peach);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
+.nav-item{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;border-top:3px solid transparent;transition:border-color .15s;user-select:none;}
+.nav-item.active{border-top-color:var(--amber);}
+.nav-ico{font-size:22px;}
+.nav-lbl{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--txs);}
+.nav-item.active .nav-lbl{color:var(--amberd);}
+
+/* SELECT SCREEN */
+.sel-screen{min-height:100vh;min-height:100dvh;padding:32px 20px;background:var(--bg);}
+.sel-logo{font-family:'Press Start 2P',monospace;font-size:20px;color:var(--amber);text-shadow:3px 3px 0 var(--amberd);text-align:center;margin-bottom:8px;}
+.sel-sub{font-size:13px;color:var(--txs);text-align:center;margin-bottom:28px;}
+.sel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;}
+.sel-card{background:var(--wall);border:3px solid var(--wood);border-radius:16px;padding:20px 14px;text-align:center;cursor:pointer;box-shadow:4px 4px 0 var(--sh);transition:border-color .15s;user-select:none;}
+.sel-card:active{transform:scale(0.96);}
+.sel-card .emo{font-size:44px;margin-bottom:10px;}
+.sel-card .nm{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--tx);}
+
+.empty{text-align:center;padding:28px 16px;font-size:13px;color:var(--txs);font-style:italic;line-height:1.7;}
+</style>
+</head>
+<body>
+
+<!-- PANTALLA SELECCIÓN -->
+<div class="sel-screen" id="sel-screen">
+  <div class="sel-logo">🏠 casita</div>
+  <div class="sel-sub">¿Quién sos?</div>
+  <div class="sel-grid" id="sel-grid"></div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div class="app" id="app" style="display:none;">
+
+  <div class="topbar">
+    <div class="logo">🏠 casita</div>
+    <div class="hbar-wrap">
+      <span class="hbar-lbl" id="hpct">100%</span>
+      <div class="hbar"><div class="hfill" id="hfill" style="width:100%;background:var(--green)"></div></div>
+    </div>
+  </div>
+
+  <div class="family-bar" id="family-bar"></div>
+
+  <div class="content" id="content">
+    <div id="toast" class="toast"></div>
+
+    <div class="screen active" id="s-casa">
+      <button class="refresh-btn" onclick="doRefresh()">↻ actualizar</button>
+      <div class="room-list" id="room-list"></div>
+      <div id="room-sheet"></div>
+    </div>
+
+    <div class="screen" id="s-tareas">
+      <button class="refresh-btn" onclick="doRefresh()">↻ actualizar</button>
+      <div class="filter-scroll" id="filter-row"></div>
+      <div class="task-list-wrap" id="task-list"></div>
+    </div>
+
+    <div class="screen" id="s-historial">
+      <button class="refresh-btn" onclick="doRefresh()">↻ actualizar</button>
+      <div class="hist-list-wrap" id="hist-list"></div>
+    </div>
+
+    <div class="screen" id="s-ajustes">
+      <div class="settings-section">
+        <div class="settings-title">mi perfil</div>
+        <div id="profile-card" class="settings-row"></div>
+        <button class="sm-btn muted" onclick="changeMember()" style="width:100%;margin-top:4px;">cambiar integrante</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">ambientes</div>
+        <div id="rooms-settings"></div>
+        <button class="sm-btn" onclick="toggleAddRoom()" style="width:100%;margin-top:2px;" id="add-room-btn">+ agregar ambiente</button>
+        <div id="add-room-wrap"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">íconos disponibles</div>
+        <div class="icons-grid-settings" id="icons-settings"></div>
+        <div style="font-size:11px;font-weight:800;color:var(--txs);margin-bottom:7px;">agregar ícono nuevo:</div>
+        <div class="add-form">
+          <div class="form-row">
+            <input id="cfg-ic-e" placeholder="emoji" style="width:60px;flex:none;text-align:center;">
+            <input id="cfg-ic-n" placeholder="nombre (ej: caca de Rocky)">
+          </div>
+          <button class="sm-btn g" onclick="addIconFromSettings()" style="width:100%;margin-top:9px;">+ agregar ícono</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="goTab('casa')" id="nav-casa"><span class="nav-ico">🏠</span><span class="nav-lbl">casa</span></button>
+    <button class="nav-item" onclick="goTab('tareas')" id="nav-tareas"><span class="nav-ico">📋</span><span class="nav-lbl">tareas</span></button>
+    <button class="nav-item" onclick="goTab('historial')" id="nav-historial"><span class="nav-ico">✨</span><span class="nav-lbl">historial</span></button>
+    <button class="nav-item" onclick="goTab('ajustes')" id="nav-ajustes"><span class="nav-ico">⚙️</span><span class="nav-lbl">ajustes</span></button>
+  </div>
+</div>
+
+<script>
+const MEMBERS=[
+  {id:'peko',name:'Peko',emoji:'👨',xp:0},
+  {id:'georgina',name:'Georgina',emoji:'👩',xp:0},
+  {id:'martino',name:'Martino',emoji:'🧒',xp:0},
+  {id:'matilda',name:'Matilda',emoji:'👧',xp:0},
+  {id:'rocky',name:'Rocky',emoji:'🐶',xp:0,npc:true},
+];
+
+const DEF_ICONS=[
+  {id:'ropa',e:'👕',n:'Ropa tirada'},
+  {id:'calzado',e:'👟',n:'Calzado'},
+  {id:'mochila',e:'🎒',n:'Mochila'},
+  {id:'utiles',e:'📚',n:'Útiles'},
+  {id:'muneca',e:'🧸',n:'Muñeca'},
+  {id:'pelota',e:'⚽',n:'Pelota'},
+  {id:'juguetes',e:'🪀',n:'Juguetes'},
+  {id:'platos',e:'🍽️',n:'Platos sucios'},
+  {id:'basura',e:'🗑️',n:'Basura'},
+  {id:'bolsas',e:'🛒',n:'Bolsas'},
+  {id:'caca',e:'💩',n:'Caca de Rocky'},
+  {id:'pis',e:'💧',n:'Pis de Rocky'},
+  {id:'comida_rocky',e:'🍖',n:'Comida de Rocky'},
+  {id:'agua_rocky',e:'🥣',n:'Agua de Rocky'},
+  {id:'hojas',e:'🌿',n:'Hojas/pasto'},
+  {id:'herram',e:'🔧',n:'Herramientas'},
+  {id:'cajas',e:'📦',n:'Cajas'},
+];
+
+const DEF_ROOMS=[
+  {id:'cocina',n:'Cocina',e:'🍳'},
+  {id:'comedor',n:'Comedor',e:'🕯️'},
+  {id:'patio',n:'Patio',e:'🌳'},
+  {id:'bano',n:'Baño',e:'🚿'},
+  {id:'estar',n:'Estar',e:'🛋️'},
+  {id:'dorm1',n:'Dormitorio 1',e:'🛏️'},
+  {id:'dorm2',n:'Dormitorio 2',e:'🛏️'},
+];
+
+const KV='https://kvdb.io/4Mxhp3gPCJCDdYBo7DsVNa/casita-state';
+
+let S={me:null,rooms:[],icons:[],tasks:[],history:[],members:MEMBERS.map(m=>({...m})),sel:null,filter:'all',addingRoom:false};
+
+function now(){return Date.now();}
+function hoursAgo(ts){return(now()-ts)/3600000;}
+function isOld(ts){return hoursAgo(ts)>=48;}
+function timeAgo(ts){
+  const h=hoursAgo(ts);
+  if(h<1)return'hace unos min';
+  if(h<24)return`hace ${Math.round(h)}h`;
+  return`hace ${Math.floor(h/24)}d`;
+}
+function harmony(){
+  const p=S.tasks.filter(t=>t.status!=='done').length;
+  return Math.max(10,Math.round(100-p*8));
+}
+
+async function load(){
+  try{
+    const r=await fetch(KV);
+    if(r.ok){
+      const txt=await r.text();
+      if(txt&&txt!==''){
+        const d=JSON.parse(txt);
+        S.rooms=d.rooms||DEF_ROOMS.slice();
+        S.icons=d.icons||DEF_ICONS.slice();
+        S.tasks=d.tasks||[];
+        S.history=d.history||[];
+        S.members=d.members||S.members;
+        return;
+      }
+    }
+  }catch(e){}
+  S.rooms=DEF_ROOMS.slice();
+  S.icons=DEF_ICONS.slice();
+}
+
+async function save(){
+  try{
+    await fetch(KV,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({rooms:S.rooms,icons:S.icons,tasks:S.tasks,history:S.history,members:S.members})
+    });
+  }catch(e){}
+}
+
+function rAll(){rFamilyBar();rHarmony();rRooms();rSheet();rTasks();rHistory();rSettings();}
+
+function rFamilyBar(){
+  document.getElementById('family-bar').innerHTML=S.members.map(m=>`
+    <div class="mbr ${S.me===m.id?'active':''}" onclick="${m.npc?'':'selectMe(\''+m.id+'\')'}">
+      <div class="mbr-ava">${m.emoji}</div>
+      <div class="mbr-name">${m.name}</div>
+      <div class="mbr-xp">${m.xp}xp</div>
+    </div>`).join('');
+}
+
+function rHarmony(){
+  const h=harmony();
+  document.getElementById('hpct').textContent=h+'%';
+  const f=document.getElementById('hfill');
+  f.style.width=h+'%';
+  f.style.background=h>=80?'var(--green)':h>=50?'var(--amber)':'var(--rust)';
+}
+
+function rRooms(){
+  const pending=S.tasks.filter(t=>t.status!=='done');
+  document.getElementById('room-list').innerHTML=S.rooms.map(r=>{
+    const rt=pending.filter(t=>t.roomId===r.id);
+    const old=rt.some(t=>isOld(t.createdAt));
+    const sel=S.sel===r.id;
+    const preview=rt.slice(0,6).map(t=>`<span style="font-size:18px;">${t.iconEmoji}</span>`).join('');
+    return`<div class="room-row ${sel?'selected':''} ${old?'has-old':''}" onclick="selRoom('${r.id}')">
+      <span class="room-emoji">${r.e}</span>
+      <div class="room-info">
+        <div class="room-name">${r.n}</div>
+        <div class="room-sub">${rt.length?rt.length+' pendiente'+(rt.length>1?'s':''):'✓ todo en orden'}</div>
+        ${preview?`<div class="room-items-preview">${preview}</div>`:''}
+      </div>
+      <span class="room-badge ${rt.length===0?'ok':''}">${rt.length===0?'✓':rt.length}</span>
+    </div>`;
+  }).join('');
+}
+
+function rSheet(){
+  const wrap=document.getElementById('room-sheet');
+  if(!S.sel){wrap.innerHTML='';return;}
+  const room=S.rooms.find(r=>r.id===S.sel);
+  if(!room){wrap.innerHTML='';return;}
+  const rt=S.tasks.filter(t=>t.roomId===room.id&&t.status!=='done');
+  const icBtns=S.icons.map(ic=>`
+    <div class="ic-btn" onclick="addTask('${room.id}','${ic.id}')">
+      <span class="emo">${ic.e}</span>
+      <span class="lbl">${ic.n.split(' ').slice(0,3).join(' ')}</span>
+    </div>`).join('');
+  wrap.innerHTML=`
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">${room.e} ${room.n}</div>
+        <div class="sheet-state" style="color:${rt.length?'var(--rust)':'var(--greend)'};">${rt.length?'🔴 '+rt.length+' cosa'+(rt.length>1?'s':'')+' pendiente':'🟢 todo en orden'}</div>
+        <div class="sheet-section">registrar en este ambiente</div>
+        <div class="icon-grid">${icBtns}</div>
+        <button class="close-sheet-btn" onclick="selRoom(null)">cerrar</button>
+      </div>
+    </div>`;
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+}
+
+function rTasks(){
+  const fr=document.getElementById('filter-row');
+  fr.innerHTML=`<button class="f-btn ${S.filter==='all'?'active':''}" onclick="setFilter('all')">todos</button>`
+    +S.rooms.map(r=>`<button class="f-btn ${S.filter===r.id?'active':''}" onclick="setFilter('${r.id}')">${r.e} ${r.n}</button>`).join('');
+  let tasks=[...S.tasks];
+  if(S.filter!=='all')tasks=tasks.filter(t=>t.roomId===S.filter);
+  tasks.sort((a,b)=>{const o={pending:0,taken:1,done:2};return(o[a.status]||0)-(o[b.status]||0)||a.createdAt-b.createdAt;});
+  const tl=document.getElementById('task-list');
+  if(!tasks.length){tl.innerHTML=`<div class="empty">Sin tareas pendientes.<br>¡El hogar está en orden! 🌿</div>`;return;}
+  tl.innerHTML=tasks.map(t=>{
+    const room=S.rooms.find(r=>r.id===t.roomId);
+    const old=isOld(t.createdAt)&&t.status!=='done';
+    const done=t.status==='done';
+    const taken=t.status==='taken';
+    const takenM=taken?S.members.find(m=>m.id===t.takenBy):null;
+    const doneM=done?S.members.find(m=>m.id===t.doneBy):null;
+    const createdM=S.members.find(m=>m.id===t.createdBy);
+    const btns=done?'':`<div class="task-btns">
+      ${!taken?`<button class="t-btn take" onclick="takeTask('${t.id}')">✋ tomar</button>`:`<button class="t-btn take" style="opacity:.6;cursor:default;">${takenM?.emoji||''} tomada</button>`}
+      <button class="t-btn done-b" onclick="doneTask('${t.id}')">✓ hecha</button>
+      <button class="t-btn del" onclick="delTask('${t.id}')">✕</button>
+    </div>`;
+    return`<div class="task-card ${taken?'taken':''} ${done?'done':''}">
+      <div class="task-top">
+        <span class="task-emo">${t.iconEmoji}</span>
+        <div class="task-info">
+          <div class="task-name ${done?'sthrough':''}">${t.iconName}</div>
+          <div class="task-meta">${room?room.e+' '+room.n:''} · ${createdM?.name||'?'} · ${timeAgo(t.createdAt)}</div>
+          ${taken&&!done?`<div class="task-taken-lbl">✋ ${takenM?.emoji||''} ${takenM?.name||'?'} la tiene</div>`:''}
+          ${done?`<div class="task-done-lbl">✓ ${doneM?.emoji||''} ${doneM?.name||'?'} · ${timeAgo(t.doneAt)}</div>`:''}
+          ${old?`<div class="task-old">⚠️ sin atender +48hs</div>`:''}
+        </div>
+      </div>
+      ${btns}
+    </div>`;
+  }).join('');
+}
+
+function rHistory(){
+  const hl=document.getElementById('hist-list');
+  if(!S.history.length){hl.innerHTML=`<div class="empty">Nada todavía.<br>Las acciones aparecen acá. 🌿</div>`;return;}
+  hl.innerHTML=[...S.history].reverse().slice(0,40).map(h=>`
+    <div class="hist-item ${h.type==='done'?'res':''}">
+      <span class="hist-who">${h.who}</span> ${h.text} · <span style="font-size:10px;">${timeAgo(h.at)}</span>
+    </div>`).join('');
+}
+
+function rSettings(){
+  const me=S.members.find(m=>m.id===S.me);
+  document.getElementById('profile-card').innerHTML=me?`<span style="font-size:26px;">${me.emoji}</span><span>${me.name}</span><span style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--amberd);">${me.xp}xp</span>`:'';
+  document.getElementById('rooms-settings').innerHTML=S.rooms.map(r=>`
+    <div class="settings-row"><span style="font-size:20px;">${r.e}</span><span>${r.n}</span></div>`).join('');
+  document.getElementById('icons-settings').innerHTML=S.icons.map(ic=>`
+    <div class="icon-setting-row"><span class="emo">${ic.e}</span><span class="n">${ic.n}</span></div>`).join('');
+}
+
+function selRoom(id){
+  S.sel=S.sel===id?null:id;
+  rRooms();rSheet();
+}
+
+function selectMe(id){
+  S.me=id;
+  try{localStorage.setItem('casita-me',id);}catch(e){}
+  rFamilyBar();rSettings();
+}
+
+function addTask(roomId,iconId){
+  const ic=S.icons.find(i=>i.id===iconId);
+  if(!ic)return;
+  const task={id:'t'+now(),roomId,iconId,iconEmoji:ic.e,iconName:ic.n,createdBy:S.me,createdAt:now(),status:'pending',takenBy:null,doneBy:null,doneAt:null};
+  S.tasks.push(task);
+  const who=S.members.find(m=>m.id===S.me);
+  const room=S.rooms.find(r=>r.id===roomId);
+  S.history.push({who:who?.name||'?',text:`registró ${ic.e} en ${room?.n||''}`,at:now(),type:'add'});
+  if(who&&!who.npc)who.xp+=5;
+  save();rAll();
+  toast(ic.e+' registrado en '+room?.n);
+}
+
+function takeTask(id){
+  const t=S.tasks.find(t=>t.id===id);
+  if(!t||t.status==='done')return;
+  t.status='taken';t.takenBy=S.me;
+  const who=S.members.find(m=>m.id===S.me);
+  const room=S.rooms.find(r=>r.id===t.roomId);
+  S.history.push({who:who?.name||'?',text:`tomó "${t.iconName}" en ${room?.n||''}`,at:now(),type:'take'});
+  if(who&&!who.npc)who.xp+=10;
+  save();rAll();
+  toast('✋ Tarea tomada');
+}
+
+function doneTask(id){
+  const t=S.tasks.find(t=>t.id===id);
+  if(!t||t.status==='done')return;
+  t.status='done';t.doneBy=S.me;t.doneAt=now();
+  const who=S.members.find(m=>m.id===S.me);
+  const room=S.rooms.find(r=>r.id===t.roomId);
+  S.history.push({who:who?.name||'?',text:`resolvió ${t.iconEmoji} "${t.iconName}" en ${room?.n||''}`,at:now(),type:'done'});
+  if(who&&!who.npc)who.xp+=30;
+  save();rAll();
+  toast('✓ ¡Listo!','g');
+}
+
+function delTask(id){
+  S.tasks=S.tasks.filter(t=>t.id!==id);
+  save();rAll();
+}
+
+function setFilter(r){S.filter=r;rTasks();}
+
+function goTab(tab){
+  ['casa','tareas','historial','ajustes'].forEach(t=>{
+    document.getElementById('s-'+t).classList.toggle('active',t===tab);
+    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  });
+  document.getElementById('content').scrollTop=0;
+}
+
+function changeMember(){
+  S.me=null;
+  try{localStorage.removeItem('casita-me');}catch(e){}
+  document.getElementById('app').style.display='none';
+  document.getElementById('sel-screen').style.display='block';
+}
+
+function toggleAddRoom(){
+  S.addingRoom=!S.addingRoom;
+  const w=document.getElementById('add-room-wrap');
+  if(S.addingRoom){
+    w.innerHTML=`<div class="add-form">
+      <div class="form-row">
+        <input id="nr-e" placeholder="emoji" style="width:60px;flex:none;text-align:center;">
+        <input id="nr-n" placeholder="nombre del ambiente">
+      </div>
+      <div style="display:flex;gap:7px;margin-top:9px;">
+        <button class="sm-btn g" onclick="addRoom()" style="flex:1;">agregar</button>
+        <button class="sm-btn muted" onclick="toggleAddRoom()" style="flex:1;">cancelar</button>
+      </div>
+    </div>`;
+  } else {w.innerHTML='';}
+}
+
+function addRoom(){
+  const e=(document.getElementById('nr-e')||{}).value?.trim()||'🏠';
+  const n=(document.getElementById('nr-n')||{}).value?.trim();
+  if(!n)return;
+  S.rooms.push({id:'r'+now(),n,e});
+  S.addingRoom=false;
+  document.getElementById('add-room-wrap').innerHTML='';
+  save();rAll();
+  toast('Ambiente "'+n+'" agregado');
+}
+
+function addIconFromSettings(){
+  const e=(document.getElementById('cfg-ic-e')||{}).value?.trim();
+  const n=(document.getElementById('cfg-ic-n')||{}).value?.trim();
+  if(!e||!n)return;
+  S.icons.push({id:'ic'+now(),e,n});
+  document.getElementById('cfg-ic-e').value='';
+  document.getElementById('cfg-ic-n').value='';
+  save();rAll();
+  toast(e+' "'+n+'" agregado');
+}
+
+async function doRefresh(){
+  await load();
+  rAll();
+  toast('↻ Actualizado');
+}
+
+let toastT;
+function toast(msg,cls){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  t.textContent=msg;t.className='toast show '+(cls||'');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>{t.className='toast '+(cls||'');},2500);
+}
+
+function cleanDone(){
+  const week=7*24*3600000;
+  S.tasks=S.tasks.filter(t=>!(t.status==='done'&&(now()-t.doneAt)>week));
+}
+
+function renderSelScreen(){
+  document.getElementById('sel-grid').innerHTML=MEMBERS.filter(m=>!m.npc).map(m=>`
+    <div class="sel-card" onclick="chooseFromSel('${m.id}')">
+      <div class="emo">${m.emoji}</div>
+      <div class="nm">${m.name}</div>
+    </div>`).join('');
+}
+
+function chooseFromSel(id){
+  S.me=id;
+  try{localStorage.setItem('casita-me',id);}catch(e){}
+  document.getElementById('sel-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  rAll();
+}
+
+async function init(){
+  await load();
+  cleanDone();
+  let saved=null;
+  try{saved=localStorage.getItem('casita-me');}catch(e){}
+  renderSelScreen();
+  if(saved&&MEMBERS.find(m=>m.id===saved)){
+    S.me=saved;
+    document.getElementById('sel-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    rAll();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
