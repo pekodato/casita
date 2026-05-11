@@ -185,6 +185,28 @@ body{font-family:'Nunito',sans-serif;color:var(--tx);max-width:480px;margin:0 au
 .add-event-form{background:var(--bg);border:1.5px solid var(--peach);border-radius:10px;padding:10px;}
 .add-event-form input{width:100%;padding:8px 10px;border:1.5px solid var(--peach);border-radius:8px;font-size:13px;margin-bottom:7px;font-family:'Nunito',sans-serif;background:var(--wall);color:var(--tx);}
 .add-event-form input:focus{outline:none;border-color:var(--amber);}
+
+/* PREMIOS */
+.prize-card{background:var(--wall);border:2.5px solid var(--wood);border-radius:14px;padding:13px 14px;margin-bottom:9px;box-shadow:3px 3px 0 var(--sh);}
+.prize-card.pending-price{border-style:dashed;border-color:var(--peach);opacity:.8;}
+.prize-top{display:flex;align-items:center;gap:12px;}
+.prize-emoji{font-size:30px;flex-shrink:0;}
+.prize-info{flex:1;}
+.prize-name{font-size:15px;font-weight:900;color:var(--tx);line-height:1.3;}
+.prize-cost{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--amberd);margin-top:3px;}
+.prize-cost.no-price{color:var(--txs);font-size:7px;}
+.prize-proposed{font-size:10px;color:var(--txs);margin-top:2px;}
+.prize-btns{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;}
+.p-btn{padding:7px 12px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;border:2px solid;font-family:'Nunito',sans-serif;user-select:none;}
+.p-btn:active{transform:scale(0.95);}
+.p-btn.redeem{background:#FFF5E0;border-color:var(--amberd);color:var(--amberd);}
+.p-btn.approve{background:#EAF3DE;border-color:var(--greend);color:var(--greend);}
+.p-btn.reject{background:#FEF0ED;border-color:var(--rust);color:var(--rust);}
+.p-btn.set-price{background:var(--surface);border-color:var(--wood);color:var(--txs);}
+.prize-xp-badge{background:var(--amber);color:#FFF8ED;font-family:'Press Start 2P',monospace;font-size:7px;padding:4px 8px;border-radius:8px;border:1.5px solid var(--amberd);white-space:nowrap;}
+.prize-xp-badge.enough{background:var(--green);border-color:var(--greend);}
+.pending-badge{background:var(--rust);color:#FFF8ED;font-size:9px;font-weight:800;padding:3px 8px;border-radius:8px;}
+.section-divider{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--amberd);margin:14px 0 10px;letter-spacing:.5px;}
 </style>
 </head>
 <body>
@@ -229,6 +251,11 @@ body{font-family:'Nunito',sans-serif;color:var(--tx);max-width:480px;margin:0 au
       <div class="hist-list-wrap" id="hist-list"></div>
     </div>
 
+    <div class="screen" id="s-premios">
+      <button class="refresh-btn" onclick="doRefresh()">↻ actualizar</button>
+      <div id="prizes-wrap"></div>
+    </div>
+
     <div class="screen" id="s-calendario">
       <button class="refresh-btn" onclick="doRefresh()">↻ actualizar</button>
       <div class="cal-header">
@@ -264,14 +291,22 @@ body{font-family:'Nunito',sans-serif;color:var(--tx);max-width:480px;margin:0 au
           <button class="sm-btn g" onclick="addIconFromSettings()" style="width:100%;margin-top:9px;">+ agregar ícono</button>
         </div>
       </div>
+      <div class="settings-section">
+        <div class="settings-title">historial</div>
+        <div class="hist-list-wrap" id="hist-list"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">premios — gestión</div>
+        <div id="prizes-settings"></div>
+      </div>
     </div>
   </div>
 
   <div class="bottom-nav">
     <button class="nav-item active" onclick="goTab('casa')" id="nav-casa"><span class="nav-ico">🏠</span><span class="nav-lbl">casa</span></button>
     <button class="nav-item" onclick="goTab('tareas')" id="nav-tareas"><span class="nav-ico">📋</span><span class="nav-lbl">tareas</span></button>
+    <button class="nav-item" onclick="goTab('premios')" id="nav-premios"><span class="nav-ico">🎁</span><span class="nav-lbl">premios</span></button>
     <button class="nav-item" onclick="goTab('calendario')" id="nav-calendario"><span class="nav-ico">📅</span><span class="nav-lbl">agenda</span></button>
-    <button class="nav-item" onclick="goTab('historial')" id="nav-historial"><span class="nav-ico">✨</span><span class="nav-lbl">historial</span></button>
     <button class="nav-item" onclick="goTab('ajustes')" id="nav-ajustes"><span class="nav-ico">⚙️</span><span class="nav-lbl">ajustes</span></button>
   </div>
 </div>
@@ -317,7 +352,7 @@ const DEF_ROOMS=[
 
 const KV='https://kvdb.io/4Mxhp3gPCJCDdYBo7DsVNa/casita-state';
 
-let S={me:null,rooms:[],icons:[],tasks:[],history:[],events:[],members:MEMBERS.map(m=>({...m})),sel:null,filter:'all',addingRoom:false,calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),calDay:null};
+let S={me:null,rooms:[],icons:[],tasks:[],history:[],events:[],prizes:[],redeemRequests:[],members:MEMBERS.map(m=>({...m})),sel:null,filter:'all',addingRoom:false,calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),calDay:null};
 
 function now(){return Date.now();}
 function hoursAgo(ts){return(now()-ts)/3600000;}
@@ -345,6 +380,8 @@ async function load(){
         S.tasks=d.tasks||[];
         S.history=d.history||[];
         S.events=d.events||[];
+        S.prizes=d.prizes||[];
+        S.redeemRequests=d.redeemRequests||[];
         S.members=d.members||S.members;
         return;
       }
@@ -353,6 +390,8 @@ async function load(){
   S.rooms=DEF_ROOMS.slice();
   S.icons=DEF_ICONS.slice();
   S.events=S.events||[];
+  S.prizes=S.prizes||[];
+  S.redeemRequests=S.redeemRequests||[];
 }
 
 async function save(){
@@ -360,12 +399,12 @@ async function save(){
     await fetch(KV,{
       method:'POST',
       headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({rooms:S.rooms,icons:S.icons,tasks:S.tasks,history:S.history,events:S.events,members:S.members})
+      body:JSON.stringify({rooms:S.rooms,icons:S.icons,tasks:S.tasks,history:S.history,events:S.events,prizes:S.prizes,redeemRequests:S.redeemRequests,members:S.members})
     });
   }catch(e){}
 }
 
-function rAll(){rFamilyBar();rHarmony();rRooms();rSheet();rTasks();rHistory();rSettings();rCalendar();}
+function rAll(){rFamilyBar();rHarmony();rRooms();rSheet();rTasks();rHistory();rSettings();rCalendar();rPrizes();}
 
 function rFamilyBar(){
   document.getElementById('family-bar').innerHTML=S.members.map(m=>`
@@ -540,7 +579,7 @@ function delTask(id){
 function setFilter(r){S.filter=r;rTasks();}
 
 function goTab(tab){
-  ['casa','tareas','calendario','historial','ajustes'].forEach(t=>{
+  ['casa','tareas','premios','calendario','ajustes'].forEach(t=>{
     document.getElementById('s-'+t).classList.toggle('active',t===tab);
     document.getElementById('nav-'+t).classList.toggle('active',t===tab);
   });
@@ -628,6 +667,180 @@ function chooseFromSel(id){
   document.getElementById('app').style.display='flex';
   rAll();
 }
+
+// ── PREMIOS ─────────────────────────────────────────────
+const PARENTS=['peko','georgina'];
+function isParent(){return PARENTS.includes(S.me);}
+
+function rPrizes(){
+  const me=S.members.find(m=>m.id===S.me);
+  const myXP=me?me.xp:0;
+  const pendingReqs=S.redeemRequests.filter(r=>r.status==='pending');
+
+  // pantalla premios
+  const wrap=document.getElementById('prizes-wrap');
+  if(!wrap)return;
+
+  // pending approvals (only shown to parents)
+  let html='';
+  if(isParent()&&pendingReqs.length){
+    html+=`<div class="section-divider">⏳ solicitudes de canje (${pendingReqs.length})</div>`;
+    html+=pendingReqs.map(req=>{
+      const prize=S.prizes.find(p=>p.id===req.prizeId);
+      const requester=S.members.find(m=>m.id===req.memberId);
+      return`<div class="prize-card" style="border-color:var(--rust);">
+        <div class="prize-top">
+          <span class="prize-emoji">${prize?.emoji||'🎁'}</span>
+          <div class="prize-info">
+            <div class="prize-name">${prize?.name||'?'}</div>
+            <div class="prize-proposed">${requester?.emoji||''} ${requester?.name||'?'} · ${prize?.cost||0} XP</div>
+          </div>
+          <span class="pending-badge">pendiente</span>
+        </div>
+        <div class="prize-btns">
+          <button class="p-btn approve" onclick="approveRedeem('${req.id}')">✓ aprobar</button>
+          <button class="p-btn reject" onclick="rejectRedeem('${req.id}')">✕ rechazar</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // active prizes
+  const active=S.prizes.filter(p=>p.cost!==null&&p.cost!==undefined);
+  const noprice=S.prizes.filter(p=>p.cost===null||p.cost===undefined);
+
+  if(active.length){
+    html+=`<div class="section-divider">🎁 premios disponibles</div>`;
+    html+=active.map(p=>{
+      const canAfford=myXP>=p.cost;
+      const myPending=S.redeemRequests.find(r=>r.prizeId===p.id&&r.memberId===S.me&&r.status==='pending');
+      return`<div class="prize-card">
+        <div class="prize-top">
+          <span class="prize-emoji">${p.emoji||'🎁'}</span>
+          <div class="prize-info">
+            <div class="prize-name">${p.name}</div>
+            <div class="prize-cost">${p.cost} XP para canjear</div>
+            ${p.proposedBy&&p.proposedBy!==S.me?`<div class="prize-proposed">propuesto por ${S.members.find(m=>m.id===p.proposedBy)?.name||'?'}</div>`:''}
+          </div>
+          <span class="prize-xp-badge ${canAfford?'enough':''}">${myXP}/${p.cost}</span>
+        </div>
+        ${!myPending&&!isParent()?`<div class="prize-btns">
+          <button class="p-btn redeem" onclick="requestRedeem('${p.id}')" ${canAfford?'':'disabled style="opacity:.4;cursor:not-allowed;"'}>${canAfford?'🎉 canjear':'XP insuficiente'}</button>
+        </div>`:''}
+        ${myPending?`<div style="margin-top:8px;font-size:11px;font-weight:800;color:var(--amberd);">⏳ solicitud enviada — esperando aprobación</div>`:''}
+        ${isParent()?`<div class="prize-btns"><button class="p-btn reject" onclick="deletePrize('${p.id}')">✕ eliminar</button></div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  if(noprice.length&&isParent()){
+    html+=`<div class="section-divider">💬 propuestas sin precio</div>`;
+    html+=noprice.map(p=>`
+      <div class="prize-card pending-price">
+        <div class="prize-top">
+          <span class="prize-emoji">${p.emoji||'🎁'}</span>
+          <div class="prize-info">
+            <div class="prize-name">${p.name}</div>
+            <div class="prize-cost no-price">sin precio aún</div>
+            <div class="prize-proposed">propuesto por ${S.members.find(m=>m.id===p.proposedBy)?.name||'?'}</div>
+          </div>
+        </div>
+        <div class="prize-btns">
+          <button class="p-btn set-price" onclick="setPricePrompt('${p.id}')">💰 ponerle precio</button>
+          <button class="p-btn reject" onclick="deletePrize('${p.id}')">✕</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // propose / add prize
+  html+=`<div class="section-divider">+ nuevo premio</div>
+  <div class="add-form">
+    <div class="form-row" style="margin-bottom:7px;">
+      <input id="prz-e" placeholder="emoji" style="width:52px;flex:none;text-align:center;margin-bottom:0;">
+      <input id="prz-n" placeholder="nombre del premio" style="margin-bottom:0;">
+    </div>
+    ${isParent()?`<input id="prz-xp" type="number" placeholder="costo en XP (ej: 200)" min="1" style="margin-top:7px;">`:''}
+    <button class="sm-btn g" onclick="addPrize()" style="width:100%;margin-top:9px;">${isParent()?'+ agregar premio':'💬 proponer premio'}</button>
+  </div>`;
+
+  wrap.innerHTML=html;
+
+  // settings panel for parents
+  const sw=document.getElementById('prizes-settings');
+  if(!sw)return;
+  if(!isParent()){sw.innerHTML=`<div style="font-size:12px;color:var(--txs);font-style:italic;">Solo Peko y Georgina pueden gestionar premios desde acá.</div>`;return;}
+  const pendingCount=pendingReqs.length;
+  sw.innerHTML=`<div class="settings-row"><span>Premios activos</span><span style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--amberd);">${active.length}</span></div>
+  <div class="settings-row"><span>Solicitudes pendientes</span><span style="font-family:'Press Start 2P',monospace;font-size:9px;color:${pendingCount?'var(--rust)':'var(--greend)'};">${pendingCount}</span></div>
+  ${pendingCount?`<button class="sm-btn" onclick="goTab('premios')" style="width:100%;margin-top:4px;">ver solicitudes →</button>`:''}`;
+}
+
+function addPrize(){
+  const e=(document.getElementById('prz-e')||{}).value?.trim()||'🎁';
+  const n=(document.getElementById('prz-n')||{}).value?.trim();
+  if(!n)return;
+  const xpEl=document.getElementById('prz-xp');
+  const cost=xpEl?parseInt(xpEl.value)||null:null;
+  S.prizes.push({id:'p'+now(),name:n,emoji:e,cost:isParent()?cost:null,proposedBy:S.me,createdAt:now()});
+  save();rAll();
+  toast(isParent()?'🎁 Premio agregado':'💬 Propuesta enviada');
+}
+
+function setPricePrompt(prizeId){
+  const xp=prompt('¿Cuánta XP cuesta este premio?');
+  const cost=parseInt(xp);
+  if(!cost||cost<1)return;
+  const p=S.prizes.find(p=>p.id===prizeId);
+  if(!p)return;
+  p.cost=cost;
+  save();rAll();
+  toast('💰 Precio asignado: '+cost+' XP');
+}
+
+function deletePrize(id){
+  S.prizes=S.prizes.filter(p=>p.id!==id);
+  S.redeemRequests=S.redeemRequests.filter(r=>r.prizeId!==id);
+  save();rAll();
+  toast('Premio eliminado');
+}
+
+function requestRedeem(prizeId){
+  const prize=S.prizes.find(p=>p.id===prizeId);
+  const me=S.members.find(m=>m.id===S.me);
+  if(!prize||!me||me.xp<prize.cost)return;
+  S.redeemRequests.push({id:'rq'+now(),prizeId,memberId:S.me,status:'pending',requestedAt:now()});
+  S.history.push({who:me.name,text:`solicitó canjear 🎁 "${prize.name}"`,at:now(),type:'redeem'});
+  save();rAll();
+  toast('🎉 Solicitud enviada — esperá aprobación');
+}
+
+function approveRedeem(reqId){
+  const req=S.redeemRequests.find(r=>r.id===reqId);
+  if(!req)return;
+  const prize=S.prizes.find(p=>p.id===req.prizeId);
+  const member=S.members.find(m=>m.id===req.memberId);
+  const approver=S.members.find(m=>m.id===S.me);
+  if(!prize||!member)return;
+  member.xp=Math.max(0,member.xp-prize.cost);
+  req.status='approved';
+  req.approvedBy=S.me;
+  req.approvedAt=now();
+  S.history.push({who:approver?.name||'?',text:`aprobó el canje de 🎁 "${prize.name}" para ${member.emoji} ${member.name}`,at:now(),type:'done'});
+  save();rAll();
+  toast('✓ Canje aprobado para '+member.name,'g');
+}
+
+function rejectRedeem(reqId){
+  const req=S.redeemRequests.find(r=>r.id===reqId);
+  if(!req)return;
+  const prize=S.prizes.find(p=>p.id===req.prizeId);
+  const member=S.members.find(m=>m.id===req.memberId);
+  req.status='rejected';
+  S.history.push({who:S.members.find(m=>m.id===S.me)?.name||'?',text:`rechazó el canje de 🎁 "${prize?.name||'?'}" de ${member?.name||'?'}`,at:now(),type:'add'});
+  save();rAll();
+  toast('Canje rechazado');
+}
+// ────────────────────────────────────────────────────────
 
 // ── CALENDARIO ──────────────────────────────────────────
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
