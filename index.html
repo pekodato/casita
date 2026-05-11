@@ -155,6 +155,36 @@ body{font-family:'Nunito',sans-serif;color:var(--tx);max-width:480px;margin:0 au
 .sel-card .nm{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--tx);}
 
 .empty{text-align:center;padding:28px 16px;font-size:13px;color:var(--txs);font-style:italic;line-height:1.7;}
+
+/* CALENDARIO */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-month{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--amberd);text-align:center;flex:1;line-height:1.6;}
+.cal-nav{width:36px;height:36px;background:var(--wall);border:2px solid var(--wood);border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;}
+.cal-nav:active{transform:scale(0.92);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin-bottom:14px;}
+.cal-dow{text-align:center;font-family:'Press Start 2P',monospace;font-size:6px;color:var(--txs);padding:4px 0 6px;}
+.cal-day{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;background:var(--wall);border:1.5px solid transparent;user-select:none;transition:border-color .12s;}
+.cal-day:active{transform:scale(0.92);}
+.cal-day.empty{background:transparent;cursor:default;border-color:transparent;}
+.cal-day.today{border-color:var(--amber);background:#FFF5E0;}
+.cal-day.selected{border-color:var(--amberd);background:var(--amber);box-shadow:2px 2px 0 var(--amberd);}
+.cal-day.selected .cal-day-n{color:#FFF8ED;}
+.cal-day.has-events .cal-dot{display:block;}
+.cal-day-n{font-size:13px;font-weight:900;color:var(--tx);line-height:1;}
+.cal-dot{display:none;width:5px;height:5px;border-radius:50%;background:var(--amber);margin-top:2px;}
+.cal-day.today .cal-dot{background:var(--amberd);}
+.cal-day.selected .cal-dot{background:#FFF8ED;}
+
+.day-panel{background:var(--wall);border:2px solid var(--amber);border-radius:14px;padding:14px;}
+.day-panel-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--amberd);margin-bottom:12px;}
+.event-list{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+.event-item{background:var(--bg);border:1.5px solid var(--peach);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:10px;}
+.event-time{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--amberd);white-space:nowrap;}
+.event-name{flex:1;font-size:13px;font-weight:800;color:var(--tx);}
+.event-del{font-size:16px;cursor:pointer;color:var(--rust);padding:2px 4px;user-select:none;}
+.add-event-form{background:var(--bg);border:1.5px solid var(--peach);border-radius:10px;padding:10px;}
+.add-event-form input{width:100%;padding:8px 10px;border:1.5px solid var(--peach);border-radius:8px;font-size:13px;margin-bottom:7px;font-family:'Nunito',sans-serif;background:var(--wall);color:var(--tx);}
+.add-event-form input:focus{outline:none;border-color:var(--amber);}
 </style>
 </head>
 <body>
@@ -199,6 +229,17 @@ body{font-family:'Nunito',sans-serif;color:var(--tx);max-width:480px;margin:0 au
       <div class="hist-list-wrap" id="hist-list"></div>
     </div>
 
+    <div class="screen" id="s-calendario">
+      <button class="refresh-btn" onclick="doRefresh()">↻ actualizar</button>
+      <div class="cal-header">
+        <div class="cal-nav" onclick="calPrev()">‹</div>
+        <div class="cal-month" id="cal-month-lbl"></div>
+        <div class="cal-nav" onclick="calNext()">›</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="day-panel"></div>
+    </div>
+
     <div class="screen" id="s-ajustes">
       <div class="settings-section">
         <div class="settings-title">mi perfil</div>
@@ -229,6 +270,7 @@ body{font-family:'Nunito',sans-serif;color:var(--tx);max-width:480px;margin:0 au
   <div class="bottom-nav">
     <button class="nav-item active" onclick="goTab('casa')" id="nav-casa"><span class="nav-ico">🏠</span><span class="nav-lbl">casa</span></button>
     <button class="nav-item" onclick="goTab('tareas')" id="nav-tareas"><span class="nav-ico">📋</span><span class="nav-lbl">tareas</span></button>
+    <button class="nav-item" onclick="goTab('calendario')" id="nav-calendario"><span class="nav-ico">📅</span><span class="nav-lbl">agenda</span></button>
     <button class="nav-item" onclick="goTab('historial')" id="nav-historial"><span class="nav-ico">✨</span><span class="nav-lbl">historial</span></button>
     <button class="nav-item" onclick="goTab('ajustes')" id="nav-ajustes"><span class="nav-ico">⚙️</span><span class="nav-lbl">ajustes</span></button>
   </div>
@@ -275,7 +317,7 @@ const DEF_ROOMS=[
 
 const KV='https://kvdb.io/4Mxhp3gPCJCDdYBo7DsVNa/casita-state';
 
-let S={me:null,rooms:[],icons:[],tasks:[],history:[],members:MEMBERS.map(m=>({...m})),sel:null,filter:'all',addingRoom:false};
+let S={me:null,rooms:[],icons:[],tasks:[],history:[],events:[],members:MEMBERS.map(m=>({...m})),sel:null,filter:'all',addingRoom:false,calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),calDay:null};
 
 function now(){return Date.now();}
 function hoursAgo(ts){return(now()-ts)/3600000;}
@@ -302,6 +344,7 @@ async function load(){
         S.icons=d.icons||DEF_ICONS.slice();
         S.tasks=d.tasks||[];
         S.history=d.history||[];
+        S.events=d.events||[];
         S.members=d.members||S.members;
         return;
       }
@@ -309,6 +352,7 @@ async function load(){
   }catch(e){}
   S.rooms=DEF_ROOMS.slice();
   S.icons=DEF_ICONS.slice();
+  S.events=S.events||[];
 }
 
 async function save(){
@@ -316,12 +360,12 @@ async function save(){
     await fetch(KV,{
       method:'POST',
       headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({rooms:S.rooms,icons:S.icons,tasks:S.tasks,history:S.history,members:S.members})
+      body:JSON.stringify({rooms:S.rooms,icons:S.icons,tasks:S.tasks,history:S.history,events:S.events,members:S.members})
     });
   }catch(e){}
 }
 
-function rAll(){rFamilyBar();rHarmony();rRooms();rSheet();rTasks();rHistory();rSettings();}
+function rAll(){rFamilyBar();rHarmony();rRooms();rSheet();rTasks();rHistory();rSettings();rCalendar();}
 
 function rFamilyBar(){
   document.getElementById('family-bar').innerHTML=S.members.map(m=>`
@@ -496,7 +540,7 @@ function delTask(id){
 function setFilter(r){S.filter=r;rTasks();}
 
 function goTab(tab){
-  ['casa','tareas','historial','ajustes'].forEach(t=>{
+  ['casa','tareas','calendario','historial','ajustes'].forEach(t=>{
     document.getElementById('s-'+t).classList.toggle('active',t===tab);
     document.getElementById('nav-'+t).classList.toggle('active',t===tab);
   });
@@ -584,6 +628,90 @@ function chooseFromSel(id){
   document.getElementById('app').style.display='flex';
   rAll();
 }
+
+// ── CALENDARIO ──────────────────────────────────────────
+const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DOWS=['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+
+function dateKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function todayKey(){const t=new Date();return dateKey(t.getFullYear(),t.getMonth(),t.getDate());}
+
+function rCalendar(){
+  const y=S.calYear,m=S.calMonth;
+  document.getElementById('cal-month-lbl').textContent=MONTHS[m]+' '+y;
+  const firstDow=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const tk=todayKey();
+  let html=DOWS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<firstDow;i++)html+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const k=dateKey(y,m,d);
+    const isToday=k===tk;
+    const isSel=k===S.calDay;
+    const hasEv=S.events.some(e=>e.date===k);
+    html+=`<div class="cal-day ${isToday?'today':''} ${isSel?'selected':''} ${hasEv?'has-events':''}" onclick="selDay('${k}')">
+      <span class="cal-day-n">${d}</span>
+      <span class="cal-dot"></span>
+    </div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  rDayPanel();
+}
+
+function rDayPanel(){
+  const wrap=document.getElementById('day-panel');
+  if(!S.calDay){wrap.innerHTML='';return;}
+  const [y,m,d]=S.calDay.split('-');
+  const label=`${parseInt(d)} de ${MONTHS[parseInt(m)-1]} ${y}`;
+  const evs=S.events.filter(e=>e.date===S.calDay).sort((a,b)=>a.time.localeCompare(b.time));
+  const evHtml=evs.length?evs.map(e=>`
+    <div class="event-item">
+      <span class="event-time">${e.time}</span>
+      <span class="event-name">${e.name}</span>
+      <span class="event-del" onclick="delEvent('${e.id}')">✕</span>
+    </div>`).join(''):`<div style="font-size:12px;color:var(--txs);font-style:italic;padding:4px 0 8px;">Sin eventos este día.</div>`;
+  wrap.innerHTML=`<div class="day-panel">
+    <div class="day-panel-title">📅 ${label}</div>
+    <div class="event-list">${evHtml}</div>
+    <div class="add-event-form">
+      <div style="font-size:10px;font-weight:800;color:var(--txs);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px;">agregar evento</div>
+      <input id="ev-name" placeholder="nombre del evento (ej: acto del colegio)">
+      <input id="ev-time" type="time" style="margin-bottom:0;">
+      <button class="sm-btn g" onclick="addEvent()" style="width:100%;margin-top:9px;">+ agregar</button>
+    </div>
+  </div>`;
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+}
+
+function selDay(k){
+  S.calDay=S.calDay===k?null:k;
+  rCalendar();
+}
+
+function calPrev(){
+  if(S.calMonth===0){S.calMonth=11;S.calYear--;}else{S.calMonth--;}
+  S.calDay=null;rCalendar();
+}
+
+function calNext(){
+  if(S.calMonth===11){S.calMonth=0;S.calYear++;}else{S.calMonth++;}
+  S.calDay=null;rCalendar();
+}
+
+function addEvent(){
+  const name=(document.getElementById('ev-name')||{}).value?.trim();
+  const time=(document.getElementById('ev-time')||{}).value||'00:00';
+  if(!name||!S.calDay)return;
+  S.events.push({id:'ev'+now(),date:S.calDay,name,time,createdBy:S.me});
+  save();rCalendar();
+  toast('📅 Evento agregado');
+}
+
+function delEvent(id){
+  S.events=S.events.filter(e=>e.id!==id);
+  save();rCalendar();
+}
+// ────────────────────────────────────────────────────────
 
 async function init(){
   await load();
